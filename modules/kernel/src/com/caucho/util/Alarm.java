@@ -686,10 +686,11 @@ public class Alarm implements ThreadTask, ClassLoaderListener {
     private static final long MIN = 10L;
     private static final long MAX = 250L;
 
+    private static boolean shouldRun = true;
     AlarmThread()
     {
       super("resin-timer");
-
+      log.finer("created AlarmThread");
       setDaemon(true);
       setPriority(Thread.MAX_PRIORITY);
     }
@@ -698,7 +699,7 @@ public class Alarm implements ThreadTask, ClassLoaderListener {
     {
       int idleCount = 0;
 
-      while (true) {
+      while (shouldRun) {
         try {
           if (_testTime > 0) {
             _currentTime = _testTime;
@@ -730,15 +731,27 @@ public class Alarm implements ThreadTask, ClassLoaderListener {
               
           LockSupport.parkNanos(sleepTime * 1000000L);
         } catch (Throwable e) {
+            e.printStackTrace();
         }
       }
+        log.finer("reached the end of run() of the AlarmThread");
+    }
+
+    public static boolean isShouldRun() {
+        return shouldRun;
+    }
+
+    public static void setShouldRun(boolean shouldRun) {
+        AlarmThread.shouldRun = shouldRun;
     }
   }
 
   static class CoordinatorThread extends Thread {
+    private static boolean shouldRun = true;
     CoordinatorThread()
     {
       super("alarm-coordinator");
+      log.finer("created CoordinatorThread");
       setDaemon(true);
       setPriority(Thread.MAX_PRIORITY);
       setName("alarm-coordinator");
@@ -756,7 +769,7 @@ public class Alarm implements ThreadTask, ClassLoaderListener {
     {
       Thread thread = this;
 
-      while (true) {
+      while (shouldRun) {
         try {
           Alarm alarm;
 
@@ -806,8 +819,18 @@ public class Alarm implements ThreadTask, ClassLoaderListener {
           }
         } catch (Throwable e) {
           log.log(Level.WARNING, e.toString(), e);
+            e.printStackTrace();
         }
       }
+        System.out.println("reached end of run() in CoordinatorThread");
+    }
+
+    public static boolean isShouldRun() {
+        return shouldRun;
+    }
+
+    public static void setShouldRun(boolean shouldRun) {
+        CoordinatorThread.shouldRun = shouldRun;
     }
   }
 
@@ -839,4 +862,16 @@ public class Alarm implements ThreadTask, ClassLoaderListener {
 
     _isStressTest = System.getProperty("caucho.stress.test") != null;
   }
+
+
+    public static void destroy()
+    {
+        System.out.println("calling destroy on alarm");
+        System.out.println("interrupting the alarmThread");
+        AlarmThread.setShouldRun(false);
+        CoordinatorThread.setShouldRun(false);
+        _alarmThread.interrupt();
+        System.out.println("interrupting the coordinatorThread");
+        _coordinatorThread.interrupt();
+    }
 }
