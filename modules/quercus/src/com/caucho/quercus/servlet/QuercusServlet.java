@@ -33,6 +33,7 @@ import com.caucho.config.ConfigException;
 import com.caucho.quercus.QuercusContext;
 import com.caucho.quercus.QuercusRuntimeException;
 import com.caucho.quercus.module.QuercusModule;
+import com.caucho.util.Alarm;
 import com.caucho.util.L10N;
 import com.caucho.vfs.Path;
 
@@ -626,8 +627,10 @@ public class QuercusServlet
    */
   public void destroy()
   {
+      log.fine("calling destroy on QuercusServlet");
     _quercus.close();
     _impl.destroy();
+    Alarm.destroy();
   }
 
   public static class PhpIni {
