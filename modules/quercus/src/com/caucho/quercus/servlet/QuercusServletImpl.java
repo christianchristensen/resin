@@ -307,6 +307,7 @@ public class QuercusServletImpl extends HttpServlet
    */
   public void destroy()
   {
+      log.finer("destroying QuercusServletImpl");
     _quercus.close();
   }
 }
